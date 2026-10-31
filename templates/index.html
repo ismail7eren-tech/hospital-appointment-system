@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hastane Yönetim Sistemi</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<header class="header">
+    <div class="header-content">
+        <h1>🏥 Hastane Yönetim Sistemi</h1>
+        <p>Hasta kayıt, doktor yönetimi ve randevu otomasyonu</p>
+    </div>
+</header>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        <div class="flash-container">
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">{{ message }}</div>
+            {% endfor %}
+        </div>
+    {% endif %}
+{% endwith %}
+
+<main class="container">
+    <!-- Hasta Ekle -->
+    <section class="box form-box">
+        <h3>👥 Yeni Hasta Ekle</h3>
+        <form method="POST" action="/hasta_ekle">
+            <div class="form-group">
+                <input type="text" name="isim" placeholder="İsim" required>
+            </div>
+            <div class="form-group">
+                <input type="text" name="soyisim" placeholder="Soyisim" required>
+            </div>
+            <div class="form-group">
+                <input type="text" name="tc" placeholder="TC Kimlik No" maxlength="11" required>
+            </div>
+            <button type="submit" class="btn-primary">Kayıt Oluştur</button>
+        </form>
+    </section>
+
+    <!-- Doktor Ekle -->
+    <section class="box form-box">
+        <h3>👨‍⚕️ Yeni Doktor Ekle</h3>
+        <form method="POST" action="/doktor_ekle">
+            <div class="form-group">
+                <input type="text" name="isim" placeholder="İsim" required>
+            </div>
+            <div class="form-group">
+                <input type="text" name="soyisim" placeholder="Soyisim" required>
+            </div>
+            <div class="form-group">
+                <select name="uzmanlik" required>
+                    <option value="">Uzmanlık Alanı Seçin</option>
+                    {% for u in uzmanliklar %}
+                        <option value="{{ u }}">{{ u }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <button type="submit" class="btn-primary">Doktor Ekle</button>
+        </form>
+    </section>
+
+    <!-- Randevu Al -->
+    <section class="box form-box">
+        <h3>📅 Randevu Oluştur</h3>
+        <form method="POST" action="/randevu_al">
+            <div class="form-group">
+                <input type="datetime-local" name="tarih" required>
+            </div>
+            <div class="form-group">
+                <select name="hasta" required>
+                    <option value="">Hasta Seçin</option>
+                    {% for h in hastalar %}
+                        <option value="{{ h['id'] }}">{{ h['isim'] }} {{ h['soyisim'] }} (TC: {{ h['tc'] }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <select id="uzmanlikSec">
+                    <option value="">Tüm Uzmanlıklar (Filtre)</option>
+                    {% for u in uzmanliklar %}
+                        <option value="{{ u }}">{{ u }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <select name="doktor" id="doktorSelect" required>
+                    <option value="">Doktor Seçin</option>
+                    {% for d in doktorlar %}
+                        <option value="{{ d['id'] }}" data-uzmanlik="{{ d['uzmanlik'] }}">
+                            Dr. {{ d['isim'] }} {{ d['soyisim'] }} - {{ d['uzmanlik'] }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <button type="submit" class="btn-success">Randevu Al</button>
+        </form>
+    </section>
+</main>
+
+<section class="table-section">
+    <h2>📋 Aktif Randevular</h2>
+    {% if not randevular %}
+        <div class="empty-state">Kayıtlı randevu bulunmamaktadır.</div>
+    {% else %}
+        <div class="table-responsive">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Tarih & Saat</th>
+                        <th>Hasta Bilgisi</th>
+                        <th>Poliklinik</th>
+                        <th>Doktor</th>
+                        <th>İşlemler</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in randevular %}
+                        <tr>
+                            <td>{{ r['tarih'].replace('T', ' ') }}</td>
+                            <td>{{ r['hasta_isim'] }} {{ r['hasta_soyisim'] }}</td>
+                            <td><span class="badge">{{ r['uzmanlik'] }}</span></td>
+                            <td>Dr. {{ r['doktor_isim'] }} {{ r['doktor_soyisim'] }}</td>
+                            <td>
+                                <button onclick="silOnay({{ r['id'] }})" class="btn-danger btn-sm">İptal Et</button>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% endif %}
+</section>
+
+<script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
